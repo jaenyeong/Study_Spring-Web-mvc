@@ -1,0 +1,88 @@
+<!DOCTYPE web-app PUBLIC
+        "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+        "http://java.sun.com/dtd/web-app_2_3.dtd">
+
+<!-- web.xml 없이도 서블릿을 등록하는 방법이 있음 -->
+<!-- web.xml 파일명 변경하여 삭제 처리 -->
+<!-- WebApplicationInitializer를 구현한 클래스 작성 (스프링 3.1, 서블릿 3.0) -->
+<web-app>
+    <display-name>Jaenyeong</display-name>
+<!--<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"-->
+<!--         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+<!--         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee-->
+<!--         http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"-->
+<!--         version="3.1">-->
+
+    <!-- 하나의 디스패처 서블릿에 모든 빈을 등록할 경우 주석처리 -->
+    <!-- AppConfig 삭제 또는 주석처리 (더이상 사용되지 않음) -->
+    <!-- ContextLoaderListener를 리스너 등록할 때 필요 -->
+<!--    <context-param>-->
+<!--        <param-name>contextClass</param-name>-->
+<!--        <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>-->
+<!--    </context-param>-->
+
+<!--    <context-param>-->
+<!--        <param-name>contextConfigLocation</param-name>-->
+<!--        <param-value>com.jaenyeong.springwebmvc.mechanism.servletAndSpring.AppConfig</param-value>-->
+<!--    </context-param>-->
+
+    <!-- 필터 설정 -->
+<!--    <filter>-->
+<!--        <filter-name>myFilter</filter-name>-->
+<!--        <filter-class>com.jaenyeong.springwebmvc.mechanism.servletAndSpring.MyFilter</filter-class>-->
+<!--    </filter>-->
+
+    <!-- 필터 매핑 -->
+<!--    <filter-mapping>-->
+<!--        <filter-name>myFilter</filter-name>-->
+<!--        <servlet-name>hello</servlet-name>-->
+<!--    </filter-mapping>-->
+
+    <!-- 리스너 설정 -->
+<!--    <listener>-->
+<!--        <listener-class>com.jaenyeong.springwebmvc.mechanism.servletAndSpring.MyListener</listener-class>-->
+<!--    </listener>-->
+
+    <!-- 하나의 디스패처 서블릿에 모든 빈을 등록할 경우 주석처리 -->
+<!--    <listener>-->
+<!--        &lt;!&ndash; ContextLoaderListener는 스프링 IoC(applicationContext) 컨테이너를 서블릿 애플리케이션 생명주기에 맞춰 바인딩 &ndash;&gt;-->
+<!--        &lt;!&ndash; 등록된 서블릿들이 사용할 수 있도록 applicationContext를 만들어 서블릿 컨텍스트에 등록 &ndash;&gt;-->
+<!--        &lt;!&ndash; 서블릿이 종료될 시점에 applicationContext를 제거 &ndash;&gt;-->
+<!--        &lt;!&ndash; applicationContext를 만들어야 하기 때문에 스프링 설정 파일 필요 &ndash;&gt;-->
+<!--        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>-->
+<!--    </listener>-->
+
+    <!-- 서블릿 설정 -->
+<!--    <servlet>-->
+<!--        <servlet-name>helloServlet</servlet-name>-->
+<!--        <servlet-class>com.jaenyeong.springwebmvc.mechanism.servletAndSpring.HelloServlet</servlet-class>-->
+<!--    </servlet>-->
+
+    <servlet>
+        <!-- DispatcherServlet가 AnnotationConfigWebApplicationContext 생성 -->
+        <!-- HelloController는 AnnotationConfigWebApplicationContext에 등록 -->
+        <!-- AnnotationConfigWebApplicationContext는 ContextLoaderListener가 만든 AnnotationConfigWebApplicationContext를 부모로 삼음 -->
+        <!-- 부모 AnnotationConfigWebApplicationContext는 AppConfig를 통해 생성 -->
+        <servlet-name>appServlet</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextClass</param-name>
+            <param-value>org.springframework.web.context.support.AnnotationConfigWebApplicationContext</param-value>
+        </init-param>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>com.jaenyeong.springwebmvc.mechanism.servletAndSpring.WebConfig</param-value>
+        </init-param>
+    </servlet>
+
+    <!-- 서블릿 매핑 -->
+<!--    <servlet-mapping>-->
+<!--        <servlet-name>helloServlet</servlet-name>-->
+<!--        <url-pattern>/hello</url-pattern>-->
+<!--    </servlet-mapping>-->
+
+    <servlet-mapping>
+        <servlet-name>appServlet</servlet-name>
+        <url-pattern>/app/*</url-pattern>
+    </servlet-mapping>
+</web-app>
