@@ -1,4 +1,4 @@
-package com.jaenyeong.springwebmvc.mechanism.servletAndSpring;
+package com.jaenyeong.springwebmvc.servletAndSpring;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;

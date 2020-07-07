@@ -1,4 +1,4 @@
-package com.jaenyeong.springwebmvc.mechanism.servletAndSpring;
+package com.jaenyeong.springwebmvc.servletAndSpring;
 
 //@Configuration
 // Root WebApplicationContext에는 컨트롤러를 필터링하여 빈으로 등록하지 않음

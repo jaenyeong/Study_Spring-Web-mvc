@@ -1,7 +1,4 @@
-package com.jaenyeong.springwebmvc.mechanism.basic;
-
-import java.time.LocalDateTime;
-import java.util.List;
+package com.jaenyeong.springwebmvc.basic;
 
 //@Service
 public class EventService {

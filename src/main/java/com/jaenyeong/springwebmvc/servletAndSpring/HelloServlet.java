@@ -1,4 +1,4 @@
-package com.jaenyeong.springwebmvc.mechanism.servletAndSpring;
+package com.jaenyeong.springwebmvc.servletAndSpring;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;

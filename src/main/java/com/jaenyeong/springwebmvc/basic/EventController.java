@@ -1,4 +1,4 @@
-package com.jaenyeong.springwebmvc.mechanism.basic;
+package com.jaenyeong.springwebmvc.basic;
 
 //@Controller
 public class EventController {
