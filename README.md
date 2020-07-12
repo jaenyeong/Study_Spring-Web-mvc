@@ -12,7 +12,7 @@ https://www.inflearn.com/course/%EC%9B%B9-mvc/dashboard
 #### gradle
 * IDEA gradle wrapper
 #### Spring boot
-* 2.3.1
+* 2.3.1 -> 2.1.2
 
 -----
 
