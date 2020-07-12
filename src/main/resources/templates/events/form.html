@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Create new Event</title>
+</head>
+<body>
+
+    <!-- @{/events} : URL expression -->
+    <!-- ${event} : variable expression 모델에 있는 데이터(스프링에서 넣어줌) 참조 -->
+<!--    <form accept-charset="#" th:action="@{/formSubmit/events}" method="post" th:object="${event}">-->
+    <form accept-charset="#" th:action="@{/formSubmit/error/handle}" method="post" th:object="${event}">
+        <!-- 에러 발생시 데이터 출력 코드 추가 -->
+        <p th:if="${#fields.hasErrors('limit')}" th:errors="*{limit}">Incorrect data</p>
+        <p th:if="${#fields.hasErrors('name')}" th:errors="*{name}">Incorrect data</p>
+
+        <!-- *{} : selection expression -->
+        <input type="text" title="name" th:field="*{name}"/>
+        <input type="text" title="limit" th:field="*{limit}"/>
+        <input type="submit" value="Create"/>
+    </form>
+
+</body>
+</html>

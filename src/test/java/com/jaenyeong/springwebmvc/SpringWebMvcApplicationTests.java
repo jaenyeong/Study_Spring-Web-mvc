@@ -1,13 +1,12 @@
 package com.jaenyeong.springwebmvc;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class SpringWebMvcApplicationTests {
+public class SpringWebMvcApplicationTests {
 
 	@Test
-	void contextLoads() {
+	public void contextLoads() {
 	}
-
 }

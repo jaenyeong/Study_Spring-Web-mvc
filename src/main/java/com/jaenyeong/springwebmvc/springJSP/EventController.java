@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Controller
+//@Controller
 public class EventController {
 
-	@GetMapping("/events")
+//	@GetMapping("/events")
 	public String getEvents(Model model) {
 		Event event1 = new Event();
 		event1.setName("스프링 웹 MVC 스터디 1");
@@ -25,6 +25,7 @@ public class EventController {
 		model.addAttribute("events", events);
 		model.addAttribute("message", "Message Test");
 
-		return "events/list";
+		// JSP
+		return "/events/list";
 	}
 }

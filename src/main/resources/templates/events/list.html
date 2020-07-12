@@ -1,10 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="UTF-8"/>
+    <title>List page</title>
 </head>
 <body>
+
+<a th:href="@{/formSubmit/request}">Create New Event</a>
+
+<div th:unless="${#lists.isEmpty(eventList)}">
+    <ul th:each="event: ${eventList}">
+         <p th:text="${event.Name}">Event Name</p>
+    </ul>
+</div>
 
 </body>
 </html>

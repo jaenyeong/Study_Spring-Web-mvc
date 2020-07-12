@@ -7,6 +7,7 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 // 독립적인 파일 형태로 배포시엔 SpringWebMvcApplication 클래스를 기반으로 패키징하고
 // 서블릿컨테이너에 배포해 사용할 수 있는 형태로 패키징할 때 사용
 public class ServletInitializer extends SpringBootServletInitializer {
+//public class ServletInitializer {
 
 	@Override
 	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {

@@ -325,3 +325,424 @@
   * 위 설정으로 커스터마이징이 힘든 경우 WebMvcConfigurer를 상속하여 추가 커스터마이징 설정
   * 그 외에 필요시 @Bean으로 설정 빈 등록하여 사용
 -----
+
+## 스프링 핵심 기술
+* 요청 맵핑하기
+* 핸들러 메소드
+* 모델과 뷰
+* 데이터 바인더
+* 예외 처리
+* 글로벌 컨트롤러
+
+### 적용된 기술
+* 스프링 부트
+* 스프링 웹 MVC
+* 타임리프
+
+### HTTP 요청 매핑
+* @RequestMapping(value = "", method = {RequestMethod.GET, RequestMethod.POST})
+* @GetMapping, @PostMapping, @PutMapping, @PatchMapping, @DeleteMapping 등등
+
+#### HTTP 메서드
+* GET
+  * 클라이언트가 서버의 리소스를 요청할 때 사용
+  * 캐싱 가능 (조건적인 GET으로 바뀔 수 있음)
+  * 브라우저 기록에 남음
+  * 북마크 할 수 있음
+  * 민감한 데이터를 보낼 때 사용하지 말 것 (URL에 다 보임)
+  * idempotent (멱등성)
+* POST
+  * 수정 또는 새로 생성 요청시 사용
+  * 서버에 보내는 데이터를 POST 요청 본문에 담음
+  * 캐시 불가능
+  * 브라우저 기록에 남지 않음
+  * 북마크 할 수 없음
+  * 데이터 길이 제한이 없음
+  * idempotent (멱등성) 하지 않을 수 있음
+* PUT
+  * URI에 해당하는 데이터(리소스)를 생성, 수정할 때 사용
+  * POST와 URI의 의미가 다름
+    * POST의 URI는 보내는 데이터를 처리할 리소스(서비스)를 지칭
+    * PUT의 URI는 보내는 데이터에 해당하는 리소스(데이터 자체)를 지칭
+  * idempotent (멱등성)
+* PATCH
+  * PUT과 비슷
+  * 기존 엔티티와 새 데이터의 차이점만 보낸다는 차이가 있음
+  * idempotent (멱등성)
+* DELETE
+  * 해당 리소스(데이터)를 삭제할 때 사용
+  * idempotent (멱등성)
+
+#### URI, URL, URN 정의
+* URI (Uniform Resource Identifier)
+  * 통합 자원 식별자
+  * 최상위 개념 (URL, URN을 포함하는 개념)
+* URL (Uniform Resource Locator)
+  * 인터넷 상에 리소스의 위치를 알려주기 위한 규약, 문자
+  * 일반적으로 주소의 위치까지 나타내는게 URL (쿼리스트링 등은 미포함)
+  * 현재 URI 중 가장 많이 쓰이는 형태 (현재 대부분 상용 서비스의 리소스 URI는 URL의 형태)
+* URN (Uniform Resource Name)
+  * 실제 파일 위치 상관없이 리소스의 이름을 사용한 식별자
+  * 위치 변경에 무관
+
+#### URI 패턴 매핑
+* @RequestMapping 지원 패턴
+  * ``` ? ``` 
+    * 한 글자 (“/author/???” => “/author/123”)
+  * ``` * ``` 
+    * 여러 글자 (“/author/*” => “/author/jaenyeong”)
+  * ``` ** ```
+    * 여러 패스 (“/author/** => “/author/jaenyeong/book”)
+  * 정규 표현식
+    * "/exp/{name:[a-z]+}"
+  * 중복 URL 매핑
+    * 가장 구체적인 핸들러와 매핑됨
+  * URI 확장자 매핑 지원
+    * "/jaenyeong.*"
+    * 사용을 권장하지 않음
+      * 보안이슈 (RFD 공격)
+      * URI 변수, Path 매개변수, URI 인코딩을 사용할 때 할 때 불명확
+        * 예전에는 클라이언트가 원하는 콘텐츠 타입 등을 위해서 확장자 패턴을 사용했었음
+        * 최근에는 요청 헤더에 어셉트 타입 명시 또는 쿼리스트링과 같은 파라미터(요청 매개변수) 이용
+    * 스프링 부트에서는 기본적으로 이 기능을 사용하지 않도록 설정되어 있음
+    
+#### content type(송신 타입), accept(원하는 리턴 타입)
+* @RequestMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+  * 문자열로 설정할 수 있으나 가급적 MediaType 상수를 사용해 설정하는 것을 추천
+  * content type 설정 : consumes
+    * 서버, 클라이언트 둘다 MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE 타입 상관 없음
+  * accept 설정 : produces
+    * 요청 헤더에 accept가 지정되어 있지 않는 경우에는 서버 핸들러에 accept가 지정되어 있더라도 매핑이 문제 없이 됨
+  * @RequestMapping(value = "/**") 와 같은 전처리 핸들러가 없다는 가정하에 (요청 핸들러 이외에 매핑되는 핸들러가 없는 경우에)
+    * content type 맞지 않는 경우 415(Unsupported Media) 에러 반환
+    * accept 맞지 않는 경우 406(Not acceptable) 에러 반환
+  * consumes, accept 둘 다 클래스(컨트롤러) 수준에서도 설정 가능
+    * 하지만 핸들러(메서드)에서 선언한 설정이 있는 경우 오버라이딩을 해서 중복 적용이 되지 않고 핸들러(메서드) 설정만 적용됨
+    * 여러 개를 중복 적용하려면 핸들러(메서드)에 배열로 정의
+  * !(Not) 사용해 특정 미디어 타입이 아닌 경우로도 매핑 가능
+
+#### headers 설정
+* @RequestMapping(value = "/headers", headers = HttpHeaders.FROM)
+* 특정한 헤더가 있는 요청을 처리하고 싶은 경우
+  * @RequestMapping(headers = "key")
+* 특정한 헤더가 없는 요청을 처리하고 싶은 경우
+  * @RequestMapping(headers = "!key")
+* 특정한 헤더 키/값이 있는 요청을 처리하고 싶은 경우
+  * @RequestMapping(headers = "key=value")
+* 특정한 요청 매개변수 키를 가지고 있는 요청을 처리하고 싶은 경우
+  * @RequestMapping(params = "a")
+* 특정한 요청 매개변수가 없는 요청을 처리하고 싶은 경우
+  * @RequestMapping(params = "!a")
+* 특정한 요청 매개변수 키/값을 가지고 있는 요청을 처리하고 싶은 경우
+  * @RequestMapping(params = "a=b")
+* "/headers?name=jaenyeong"과 같은 파라미터도 설정 가능
+  * 조건이 맞지 않으면 400(Bad request) 에러 발생
+
+#### HEAD, OPTIONS HTTP 메서드
+* 직접 구현하지 않아도 스프링에서 자동으로 처리하는 HTTP 메서드
+* HEAD 메서드
+  * GET 요청과 동일하지만 응답 본문을 받아 오지 않고 응답 헤더만 수신
+  * param 설정시 요청이 HEAD 메서드라도 param이 있어야 함
+* OPTION 메서드
+  * 사용할 수 있는 HTTP 메서드 목록 제공
+  * 서버, 특정 리소스가 제공하는 기능 확인 가능
+  * 서버는 ALLOW 응답 헤더에 지원하는 HTTP 메서드 목록을 제공
+
+#### 커스텀 어노테이션
+* @Documented
+  * java doc과 같은 유형으로 문서화
+* @Target(ElementType.METHOD)
+  * 사용할 곳(컨텍스트) 지정
+* @Retention(RetentionPolicy.RUNTIME)
+  * 어노테이션 유지 기간 옵션 지정
+  * Source
+    * 소스 코드까지만 유지 (컴파일 후 컴파일된 .class 파일에는 포함되지않음)
+  * Class
+    * 바이트코드인 .class 파일까지 유지 (런타임 시 메모리에 로딩되지 않음)
+  * Runtime
+    * 메모리에 기존 소스와 같이 로딩됨
+* 메타(Meta) 애노테이션
+  * 애노테이션에 사용할 수 있는 애노테이션 (위 어노테이션과 같은 것들)
+  * 스프링이 제공하는 대부분의 애노테이션은 메타 애노테이션으로 사용 가능
+* 합성(Composite) annotation
+  * 한개 혹은 여러 메타 애노테이션을 조합해서 만든 애노테이션
+  * 코드를 간결하게 줄일 수 있음
+  * 보다 구체적인 의미를 부여할 수 있음
+
+### 핸들러 메서드
+
+#### 아규먼트, 리턴 타입
+* 요청 또는 응답 자체에 접근 가능한 API
+  * WebRequest
+  * NativeWebRequest
+  * ServletRequest(Response)
+  * HttpServletRequest(Response)
+* 요청 본문을 읽어오거나, 응답 본문을 쓸 때 사용할 수 있는 API
+  * InputStream
+  * OutputStream
+  * Reader
+  * Writer
+* 스프링 5, HTTP/2 리소스 푸쉬에 사용
+  * PushBuilder
+* GET, POST, ... 등에 대한 정보
+  * HttpMethod
+* LocaleResolver가 분석한 요청의 Locale 정보
+  * Locale
+  * TimeZone
+  * ZoneId
+* URI 템플릿 변수 읽을 때 사용
+  * @PathVariable
+* URI 경로 중에 키/값 쌍을 읽어 올 때 사용
+  * @MatrixVariable
+* 서블릿 요청 매개변수 값을 선언한 메소드 아규먼트 타입으로 변환. 단순 타입인 경우에 이 애노테이션을 생략 가능
+  * @RequestParam
+* 요청 헤더 값을 선언한 메소드 아규먼트 타입으로 변환
+  * @RequestHeader
+* 리턴 값을 HttpMessageConverter를 사용해 응답 본문으로 사용
+  * @ResponseBody
+* 응답 본문 뿐 아니라 헤더 정보까지, 전체 응답을 만들 때 사용
+  * HttpEntity
+  * ResponseEntity
+* ViewResolver를 사용해서 뷰를 찾을 때 사용할 뷰네임
+  * String
+* 암묵적인 모델 정보를 랜더링할 뷰 인스턴스
+  * View
+* (RequestToViewNameTranslator를 통해서) 암묵적으로 판단한 뷰 랜더링할 때 사용할 모델 정보
+  * Map
+  * Model
+* (RequestToViewNameTranslator를 통해서) 암묵적으로 판단한 뷰 랜더링할 때 사용할 모델 정보에 추가. 이 애노테이션은 생략 가능
+  * @ModelAttribute
+
+#### URI 패턴
+* @PathVariable
+  * 요청 URI 패턴의 일부를 핸들러 메소드 아규먼트로 받는 방법
+  * 타입 변환 지원
+  * (기본)값이 반드시 있어야 함
+  * Optional 지원
+* @MatrixVariable
+  * 요청 URI 패턴에서 키/값 쌍의 데이터를 메소드 아규먼트로 받는 방법
+  * 타입 변환 지원
+  * (기본)값이 반드시 있어야 함
+  * Optional 지원
+  * 이 기능은 기본적으로 비활성화. 활성화 하려면 다음과 같이 설정해야 함
+    * WebMvcConfigurer를 구현하는 설정 객체 생성(@Configuration 태깅된 객체)
+    * configurePathMatch(PathMatchConfigurer configurer) 메서드 오버라이딩
+      * UrlPathHelper 객체를 생성, setRemoveSemicolon 메서드 false 설정
+      * 스프링 설정 객체인 PathMatchConfigurer에 setUrlPathHelper 메서드를 사용해 UrlPathHelper 객체 주입
+
+#### @RequestMapping
+* 요청 매개변수
+  * queryString(쿼리 매개변수)
+  * form data
+* @RequestParam
+  * 요청 매개변수에 들어있는 단순 타입 데이터를 메소드 아규먼트로 받아올 수 있음
+  * 값이 반드시 있어야 함
+  * required=false 또는 Optional을 사용해서 부가적인 값으로 설정 가능
+  * String이 아닌 값들은 타입 컨버전을 지원
+  * Map<String, String> 또는 MultiValueMap<String, String>에 사용해서 모든 요청 매개변수를 받아올 수 있음
+  * 이 애노테이션은 생략 가능
+* @RequestParam와 @ModelAttribute는 생략 가능
+
+#### form submit
+* 타임리프
+  * 서블릿 컨테이너 엔진이 없어도 렌더링이 됨
+  * 표현식
+    * @{}: URL 표현식
+    * ${}: variable 표현식
+    * *{}: selection 표현식
+
+#### @ModelAttribute
+* URI 패스, 요청 매개변수, 세션 등과 같이 여러 곳에 있는 단순 타입 데이터를 복합 타입 객체로 받아오거나 해당 객체를 새로 만들 때 사용 가능
+* 생략 가능
+* 값읇 바인딩할 수 없는 경우 BindException 발생 400(Bad request) 에러
+  * 바인딩 에러를 직접 다룰려는 경우
+    * BindingResult 타입의 아규먼트를 바로 오른쪽에 추가
+* 바인딩 이후에 검증 작업을 추가로 하고 싶은 경우
+  * @Valid 또는 @Validated 애노테이션을 사용
+    * @Valid
+      * javax.validation.constraints 패키지
+      * 그룹 지정 안됨
+    * @Validated
+      * org.springframework.validation.annotation 패키지
+      * Validated 그룹화 인터페이스 선언하여 처리하는 경우 이벤트 생성 중 검증, 이벤트 수정 중 검증처럼 설계하는 것이 나음
+* 스프링 최신 버전에서 유효성검사가 작동하지 않는 문제 등이 있어 프레임워크 버전 다운그레이드
+
+#### @Validated
+* 위에서 언급했듯 @Valid는 그룹지정이 안되기 때문에 @Validated를 사용하여 그룹 클래스 설정
+
+#### form submit 에러 처리
+* 바인딩 에러 발생 시 Model에 담기는 정보
+  * Event
+  * BindingResult.event
+* 타임리프 사용 중 에러 발생시 렌더링
+  * ``` <p th:if="${#fields.hasErrors('limit')}" th:errors="*{limit}">Incorrect data</p> ```
+* Post / Redirect / Get 패턴 (PRG 패턴)
+  * Post 이후에 브라우저를 리프래시 하더라도 폼 서브밋이 발생하지 않도록 하는 패턴
+
+#### @SessionAttributes
+* 컨트롤러에 태깅
+* 모델 정보를 HTTP 세션에 저장해주는 어노테이션
+  * HttpSession을 직접 사용할 수도 있지만 이 어노테이션에 설정한 이름에 해당하는 모델 정보를 자동으로 세션에 넣어줌
+  * @ModelAttribute는 세션에 있는 데이터도 바인딩 받음
+  * 여러 화면(또는 요청)에서 사용해야 하는 객체를 공유할 때 사용
+* 세션 사용 용도
+  * 장바구니 데이터 경우
+  * 데이터 생성시 여러 화면에 걸쳐 만드는 경우
+    * 입력 받는 데이터가 많아 입력 폼을 화면을 나눠 처리한 경우
+* 사용 완료시 세션 데이터를 사용한 곳에서 ``` sessionStatus.setComplete(); ``` 메서드를 통해 비우도록 알려줌
+  * 비우지 않을 경우 데이터가 남아 있음
+* @SessionAttribute
+  * HTTP 세션에 들어있는 값 참조할 때 사용
+    * HttpSession을 사용할 때 비해 타입 컨버전을 자동으로 지원하기 때문에 조금 편리
+      * ``` @SessionAttribute LocalDateTime visitTime ```
+         * ``` System.out.println("HttpSession : " + visitTimeSession); ```
+      * ``` HttpSession httpSession ```
+        * ``` LocalDateTime visitTimeSession = (LocalDateTime) httpSession.getAttribute("visitTime"); ```
+    * HTTP 세션에 데이터를 넣고 빼고 싶은 경우에는 HttpSession을 사용할 것
+  * 다른 어노테이션과 마찬가지로 이름 매핑
+  * 세션에 담겨 있는 데이터를 해당 변수에 매핑, 바인딩해줌
+  * 예제에서 VisitTimeInterceptor 인터셉터 구현하여 세션에 visitTime 데이터 삽입 후 컨트롤러(핸들러)에서 빼내 값 확인
+* @SessionAttributes, @SessionAttribute 차이
+  * @SessionAttributes는 해당 컨트롤러 내에서만 동작
+    * 즉 해당 컨트롤러 안에서 다루는 특정 모델 객체를 세션에 넣고 공유할 때 사용
+  * @SessionAttribute는 컨트롤러 밖(인터셉터 또는 필터 등)에서 만들어 준 세션 데이터에 접근할 때 사용
+
+#### RedirectAttributes
+* 리다이렉트 시 전달할 데이터를 쿼리스트링으로 명시하여 전달하는 기능 수행
+  * URL에 붙을 수 있어야 하기 때문에 문자열로 변환이 가능한 데이터여야 함
+* 리다이렉트시 스프링에서는 모델 내에 프리미티브 타입 데이터는 쿼리스트링으로 자동으로 연결되지만 스프링 부트는 이 기능이 기본적으로 꺼져있음
+  * requestMappingHandlerAdapter 객체의 setIgnoreDefaultModelOnRedirect 메서드 설정이 true인 경우(스프링부트)  
+    리다이렉트시 프리미티브 타입 데이터가 자동으로 전달되지 않음
+  * 원하는 값만 전달하고 싶은 경우 RedirectAttributes를 사용하여 명시적으로 전달 가능
+* application.properties 설정
+  * spring.mvc.ignore-default-model-on-redirect=false
+  * 설정시 http://localhost:8080/events/session/form/visitTime?name=as&limit=123 와 같이 쿼리스트링으로 연결됨
+* @RequestParam, @ModelAttribute로 받을 수 있음
+  * @ModelAttribute 사용시 주의점
+    * 쿼리스트링 데이터를 모델 어트리뷰트 사용하여 객체에 바인딩하는 경우 세션 어트리뷰트에서 사용한 이름과 동일하면 안됨
+    * 동일한 이름 사용시 세션에서 데이터를 먼저 찾아보려고 함
+    * 해당 예제에서는 리다이렉트 전 세션을 비우기 때문에 모델 어트리뷰트에 매핑할 값을 찾지 못해 에러 발생
+    * 따라서 모델 어트리뷰트로 값을 바인딩 받는 경우 세션에서 사용한 이름과 다른 새로운 이름을 사용할 것
+      * ``` @SessionAttributes("event") ```
+      * ``` @ModelAttribute Event event ``` : 세션 어트리뷰트와 이름이 동일한 경우 세션에서 먼저 찾고 없으면 에러 발생
+      * ``` @ModelAttribute("newEvent") Event event ``` 이처럼 새로운 이름 사용하여 쿼리스트링의 데이터를 바인딩
+
+#### Flash Attributes
+* 리다이렉트 시 데이터 전달할 때 사용
+  * 데이터가 URI에 노출되지 않음
+  * 임의의 객체를 저장할 수 있음
+  * 보통 HTTP 세션을 사용
+* 리다이렉트 한 곳에서 처리가 완료되면 해당 데이터는 세션에서 제거됨 (1회성)
+* 예제 테스트 에러
+  * HTML 파일에 <meta charset="UTF-8"> 태그로 인해 아래 테스트가 에러 발생
+  * meta태그를 꼭 닫아줄 것 <meta charset="UTF-8"/>
+* 주의
+  * 세션을 통해 데이터를 전달한다고 되어 있으나 HttpSession 객체에 담겨있지 않음
+  * RedirectAttributes 객체의 addFlashAttribute 메서드를 통해 데이터를 넘기는 경우
+    * ``` @ModelAttribute("flashEvent") Event sessionFlashEvent ```
+    * 위와 같이 모델 어트리뷰트로 받으면 addFlashAttribute 메서드 설정을 통해 넘긴 데이터 값이 아닌  
+      쿼리 스트링으로 넘어오는 데이터 값이 바인딩 됨
+
+#### MultipartFile
+* 파일 업로드에 사용하는 메서드 아규먼트
+* MultipartResolver 빈이 설정되어 있어야 사용 가능 (스프링 부트 자동 설정이 해 줌)
+  * 스프링에서는 기본 MultipartResolver가 설정되어 있지 않음
+  * 스프링 부트 MultipartProperties 클래스 (@ConfigurationProperties 어노테이션 태깅되어 있음)
+* POST multipart/form-data 요청에 들어있는 파일 참조 가능
+* List<MultipartFile> 아큐먼트로 여러 파일 참조 가능
+* application.properties 파일 설정
+  * 파일 용량 등 설정 가능
+  * spring.servlet.multipart.max-file-size= 10MB
+  * spring.servlet.multipart.max-request-size = 10MB
+
+#### ResponseEntity
+* 스프링 ResourceLoader를 이용해 파일 읽어옴
+* 파일 다운로드 응답 헤더에 설정할 내용
+  * Content-Disposition : 사용자가 해당 파일을 받을 때 사용할 파일 이름
+  * Content-Type : 어떤 파일인가
+  * Content-Length : 얼마나 큰 파일인가
+* 미디어 타입(파일 확장자)을 직접 지정하지 않고 자바 API를 통해 확인할 수 있음
+  * 미디어 타입을 확인하는 라이브러리 또한 자바 API를 통해 타입 확인
+  * 해당 예제에서는 Tika 라이브러리를 사용해 처리
+    * implementation group: 'org.apache.tika', name: 'tika-core', version: '1.24.1'
+    * ``` Tika tika = new Tika(); String mediaType = tika.detect(file); ```
+
+#### @RequestBody, HttpEntity
+* @RequestBody
+  * 요청 본문(body)에 들어있는 데이터를 HttpMessageConverter를 통해 변환한 객체로 받아올 수 있음
+  * @Valid 또는 @Validated를 사용해서 값을 검증 가능
+  * BindingResult 아규먼트를 사용해 코드로 바인딩 또는 검증 에러를 확인 가능
+* HttpMessageConverter
+  * 스프링 MVC 설정 (WebMvcConfigurer)에서 설정 가능
+  * configureMessageConverters : 기본 메시지 컨버터를 변경하는 것과 같음
+    * 기본 컨버터를 사용하지 않는 것과 동일
+    * 가급적 사용하지 않는 것을 추천
+  * extendMessageConverters : 메시지 컨버터에 추가
+  * 스프링 부트에서는 기본적으로 메세지 컨버터에 jackson이 자동 등록되어 있음
+  * 메서드 아규먼트를 리졸빙할 때 핸들러 어댑터들이 등록되어 있는 컨버터들을 사용(그 중에 컨버전을 할 수 있는 컨버터에게 위임)
+  * 기본 컨버터
+    * WebMvcConfigurationSupport.addDefaultHttpMessageConverters
+* HttpEntity
+  * @RequestBody와 비슷하지만 추가적으로 요청 헤더 정보까지 사용 가능
+  * HttpEntity 객체 사용시엔 @RequestBody 어노테이션 생략 가능
+  * 대신 제네릭에 body 타입 지정 필요
+
+#### @ResponseBody, ResponseEntity
+* @ResponseBody
+  * 데이터를 HttpMessageConverter를 사용해 응답 본문 메시지로 보낼 때 사용
+  * HttpMessageConverter를 사용하여 변환
+  * @RestController 사용시 자동으로 모든 핸들러 메소드에 적용 (@Controller + @ResponseBody)
+* ResponseEntity
+  * 응답 헤더 상태 코드 본문을 직접 다루고 싶은 경우에 사용
+  * 헤더, 상태정보, 바디 데이터 바인딩 가능
+
+#### 핸들러 메서드 정리
+* @JsonView
+* PushBuilder
+  * 스프링 5
+  * HTTP/2 (양방향 푸시 가능, 클라이언트가 요청하지 않아도 서버가 푸시 가능)
+
+#### @ModelAttribute
+* Model은 인터페이스
+* ModelMap은 LinkedHashMap 클래스를 상속받은 클래스
+* 컨트롤러 전체에서 사용할 Model을 컨트롤러 클래스 상단에 따로 선언해 사용 가능
+  * 예제에서 HandlerMethodController_2 컨트롤러 클래스 참조
+* @ModelAttribute의 다른 용법
+  * @RequestMapping을 사용한 핸들러 메소드의 아규먼트에 사용
+  * @Controller 또는 @ControllerAdvice를 사용한 클래스에서 모델 정보를 초기화 할 때 사용
+  * @RequestMapping과 같이 사용하면 해당 메소드에서 리턴하는 객체를 모델에 넣어 줌
+    * RequestToViewNameTranslator
+
+#### @InitBinder
+* DataBinder(데이터 바인더)
+  * 특정 컨트롤러에서 바인딩 또는 검증 설정을 변경할 때 사용
+  * 리턴 타입은 반드시 void
+* 설정
+  * 바인딩 설정
+    * ``` webDataBinder.setDisallowedFields(); ```
+  * 포매터 설정
+    * ``` webDataBinder.addCustomFormatter(); ```
+  * 밸리데이터 설정
+    * ``` webDataBinder.addValidators(); ```
+  * 특정 모델 객체에만 바인딩 또는 밸리데이터 설정을 적용하고 싶은 경우
+    * ``` @InitBinder("event") ```
+* Validator 인터페이스 구현한 커스터마이징 클래스를 구현할 수 있음
+* 예제에서 HandlerMethodController2, EventValidator 클래스 참조
+
+#### @ExceptionHandler
+* 특정 예외가 발생한 요청을 처리하는 핸들러 정의
+  * 지원하는 메소드 아규먼트 (해당 예외 객체, 핸들러 객체, ...)
+  * 지원하는 리턴 값
+  * REST API의 경우 응답 본문에 에러에 대한 정보를 담아주고, 상태 코드를 설정하려면 ResponseEntity를 주로 사용
+  * 가장 구체적인 익셉션이 매핑됨
+
+#### @ControllerAdvice
+* 전역 컨트롤러
+  * 예외 처리, 바인딩 설정, 모델 객체를 모든 컨트롤러 전반에 걸쳐 적용하고 싶은 경우에 사용
+    * @ExceptionHandler
+    * @InitBinder
+    * @ModelAttributes
+* 적용 범위 지정 가능
+  * 특정 애노테이션을 가지고 있는 컨트롤러에만 적용
+  * 특정 패키지 이하의 컨트롤러에만 적용
+  * 특정 클래스 타입에만 적용

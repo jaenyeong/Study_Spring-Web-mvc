@@ -25,6 +25,7 @@ public class HelloController {
 //
 //		// 설정 변경한 ViewResolver 빈 등록 전
 ////		return "/WEB-INF/sample.jsp";
+//      // JSP
 //		return "sample";
 //	}
 
